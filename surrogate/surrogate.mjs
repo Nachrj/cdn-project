@@ -13,6 +13,23 @@ const PORT = 3000;
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const cache = new Map();
+const MAX_CACHE_SIZE = 5;
+
+function getLeastFrequentlyUsedKey() {
+  let leastKey = null;
+  let leastCount = Infinity;
+
+  for (const [key, value] of cache.entries()) {
+    if (value.count < leastCount) {
+      leastCount = value.count;
+      leastKey = key;
+    }
+  }
+
+  return leastKey;
+}
+
 // Function to get image data from another server hosted on localhost:8000 and save it locally
 function getDataFromMainServer(endpoint) {
   return new Promise((resolve, reject) => {
@@ -26,12 +43,10 @@ function getDataFromMainServer(endpoint) {
     const req = http.request(options, (res) => {
       let data = [];
 
-      // Handle incoming data chunks in binary format
       res.on("data", (chunk) => {
         data.push(chunk);
       });
 
-      // Handle end of response
       res.on("end", () => {
         if (res.statusCode === 200) {
           const buffer = Buffer.concat(data);
@@ -41,10 +56,8 @@ function getDataFromMainServer(endpoint) {
             path.basename(endpoint)
           );
 
-          // Ensure the directory exists
           fs.mkdirSync(path.dirname(localPath), { recursive: true });
 
-          // Save the image locally
           fs.writeFile(localPath, buffer, (err) => {
             if (err) {
               console.error("Error saving the file:", err.message);
@@ -60,39 +73,64 @@ function getDataFromMainServer(endpoint) {
       });
     });
 
-    // Handle request errors
     req.on("error", (err) => {
       console.error("Error with request:", err.message);
       reject(err);
     });
 
-    // End the request
     req.end();
   });
 }
 
-// Middleware to serve static files from the /public directory
 app.use(express.static("public"));
 
-// Serve static images from the /images directory
-app.use("/images", express.static(path.join(__dirname, "images")));
-
-// Route handler for custom image fetching from localhost:8000
 app.use(async (req, res) => {
+  const imagePath = req.path;
   try {
-    const { buffer, contentType } = await getDataFromMainServer(req.path);
+    if (cache.has(imagePath)) {
+      const cachedImage = cache.get(imagePath);
+      cachedImage.count++;
+      res.setHeader("Content-Type", cachedImage.contentType);
+      res.send(cachedImage.buffer);
+      console.log("Image served from cache");
+      console.log("Cache size:", cache.size);
+      console.log("Cache contents:", cache);
+      return;
+    }
+    const { buffer, contentType } = await getDataFromMainServer(imagePath);
+
+    cache.set(imagePath, { buffer, contentType, count: 1 });
+
+    if (cache.size > MAX_CACHE_SIZE) {
+      const lfuKey = getLeastFrequentlyUsedKey();
+      cache.delete(lfuKey);
+
+      const filePath = path.join(__dirname, "images", path.basename(lfuKey));
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error(`Error deleting file ${filePath}:`, err.message);
+        } else {
+          console.log(`File deleted: ${filePath}`);
+        }
+      });
+
+      console.log(`Evicted least frequently used image: ${lfuKey}`);
+    }
+    console.log("Cache size:", cache.size);
+    console.log("Cache contents:", cache);
+
     res.setHeader("Content-Type", contentType);
     res.send(buffer);
-    console.log("Image sent successfully");
+    console.log("Image served and cached:", imagePath);
   } catch (err) {
-    console.error("Error fetching image from local server:", err.message);
+    console.error("Error fetching image from main server:", err.message);
+
     const imgPath = path.join(__dirname, "images", "crying_minnie.png");
     res.sendFile(imgPath);
-    console.log("Default image sent");
+    console.log("Default image served for:", imagePath);
   }
 });
 
-// Server setup
 app.listen(PORT, () => {
   console.log(`Running server on PORT ${PORT}...`);
 });
