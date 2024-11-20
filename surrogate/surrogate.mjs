@@ -13,8 +13,12 @@ const PORT = 3000;
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const args = process.argv.slice(2);
+const MAX_CACHE_SIZE = parseInt(args[0], 10) || 5;
+const BROTHER_HOSTNAME = args[1] || "localhost";
+const BROTHER_PORT = parseInt(args[2], 10) || 8000;
+
 const cache = new Map();
-const MAX_CACHE_SIZE = 5;
 
 function getLeastFrequentlyUsedKey() {
   let leastKey = null;
@@ -34,8 +38,8 @@ function getLeastFrequentlyUsedKey() {
 function getDataFromMainServer(endpoint) {
   return new Promise((resolve, reject) => {
     const options = {
-      hostname: "localhost",
-      port: 8000,
+      hostname: BROTHER_HOSTNAME,
+      port: BROTHER_PORT,
       path: endpoint,
       method: "GET",
     };
@@ -132,5 +136,9 @@ app.use(async (req, res) => {
 });
 
 app.listen(PORT, () => {
+  if (args.length > 3) {
+    console.error("Too many arguments provided.");
+    process.exit();
+  }
   console.log(`Running server on PORT ${PORT}...`);
 });
