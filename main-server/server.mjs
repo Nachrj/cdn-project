@@ -13,13 +13,23 @@ const PORT = 8000;
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Serve static files from the "public" directory
 app.use(express.static("public"));
 
-app.use("/images", express.static(path.join(__dirname, "images")));
+// Serve images from the "images" directory
+app.use("/images", (req, res) => {
+  const imgPath = path.join(__dirname, "images", req.path);
 
-app.use((req, res, next) => {
-  const imgPath = path.join(__dirname, "images", "crying_minnie.png");
-  res.sendFile(imgPath);
+  // Check if the file exists
+  fs.access(imgPath, fs.constants.F_OK, (err) => {
+    if (err) {
+      // File does not exist, send a 404 response
+      res.status(404).send("Image not found");
+    } else {
+      // File exists, send the image
+      res.sendFile(imgPath);
+    }
+  });
 });
 
 // Server setup

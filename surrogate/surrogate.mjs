@@ -83,10 +83,12 @@ app.use(async (req, res) => {
     const { buffer, contentType } = await getDataFromMainServer(req.path);
     res.setHeader("Content-Type", contentType);
     res.send(buffer);
+    console.log("Image sent successfully");
   } catch (err) {
     console.error("Error fetching image from local server:", err.message);
     const imgPath = path.join(__dirname, "images", "crying_minnie.png");
     res.sendFile(imgPath);
+    console.log("Default image sent");
   }
 });
 
