@@ -1,9 +1,9 @@
 main-server/node_modules/
-main-server/images
+main-server/images/
 surrogate/node_modules/
-surrogate/EU_images
-surrogate/FR_images
-surrogate/IT_images
+surrogate/EU_images/
+surrogate/FR_images/
+surrogate/IT_images/
 
 # Desktop Services Store
 .DS_Store
