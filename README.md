@@ -38,9 +38,11 @@ Ensure that you have the following installed on your machine:
    ```
 3. Run the server:
    ```bash
-   node surrogate.mjs <max_cached_images> <brother_hostname> <brother_port>
+   node surrogate.mjs <port> <surrogate_id> <max_cached_images> <brother_hostname> <brother_port>
    ```
-   - The first parameter is the max amount of images that the surrogate is going to cache.
+   - The first parameter is the port of the server to be run.
+   - The second parameter is the surrogate id (1 : Europe surrogate, 2 : France surrogate, 3 : Italy surrogate)
+   - The third parameter is the max amount of images that the surrogate is going to cache.
    - The brother hostname and port is going to be the place where the surrogate is going to get the images from.
    
 ## Running Both Servers Concurrently
