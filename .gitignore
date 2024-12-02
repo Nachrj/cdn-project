@@ -1,7 +1,12 @@
 main-server/node_modules/
 main-server/images/
 surrogate/node_modules/
-surrogate/images/
+surrogate/EU_images/
+surrogate/FR_images/
+surrogate/IT_images/
+
+# Desktop Services Store
+.DS_Store
 
 # Logs
 logs
