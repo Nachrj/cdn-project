@@ -13,8 +13,8 @@ const __dirname = path.dirname(__filename);
 const args = process.argv.slice(2);
 const PORT = 3000;
 const MAX_CACHE_SIZE = 5;
-const BROTHER_HOSTNAME = args[0] || "localhost";
-const BROTHER_PORT = 8000;
+const SERVER_HOSTNAME = args[0] || "localhost";
+const SERVER_PORT = 8000;
 const IMAGE_DIR = "EU_images";
 
 const cache = new Map();
@@ -37,8 +37,8 @@ function getLeastFrequentlyUsedKey() {
 function getDataFromMainServer(endpoint) {
   return new Promise((resolve, reject) => {
     const options = {
-      hostname: BROTHER_HOSTNAME,
-      port: BROTHER_PORT,
+      hostname: SERVER_HOSTNAME,
+      port: SERVER_PORT,
       path: endpoint,
       method: "GET",
     };
