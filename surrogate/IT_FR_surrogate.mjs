@@ -12,21 +12,19 @@ const __dirname = path.dirname(__filename);
 
 const args = process.argv.slice(2);
 const HTTP_PORT = 80; // For Anycast and client-facing HTTP
-const INTERNAL_PORT = parseInt(args[0], 10) || 3000; // For internal communication
-const SURROGATE_ID = parseInt(args[1], 10) || 1; // 1: Europe, 2: France, 3: Italy
-const MAX_CACHE_SIZE = parseInt(args[2], 10) || 5;
+const INTERNAL_PORT = parseInt(args[0], 10) || 4000; // For internal communication
+const SURROGATE_ID = parseInt(args[1], 10) || 1; // 1: France, 2: Italy -> For the images directory name
+const MAX_CACHE_SIZE = parseInt(args[2], 10) || 3;
 const BROTHER_HOSTNAME = args[3] || "localhost";
-const BROTHER_PORT = parseInt(args[4], 10) || 8000;
+const BROTHER_PORT = 3000;
+const DEFAULT_IMAGE_FILE_NAME = "crying_minnie.png";
 
 let image_dir;
 switch (SURROGATE_ID) {
   case 1:
-    image_dir = "EU_images";
-    break;
-  case 2:
     image_dir = "FR_images";
     break;
-  case 3:
+  case 2:
     image_dir = "IT_images";
     break;
 }
@@ -159,15 +157,8 @@ http
       console.log("Cache contents:", cache);
     } catch (err) {
       // Error handling
-      if (SURROGATE_ID == 1) {
         console.error("Error fetching image from main server:", err.message);
-        res.statusCode = 404;
-        res.end("Image not found");
-      } else {
-        console.error("Error fetching image from main server:", err.message);
-        //const imgPath = path.join(__dirname, image_dir, "crying_minnie.png");
-        //res.sendFile(imgPath);
-        const defaultImagePath = path.join(__dirname, image_dir, "crying_minnie.png");
+        const defaultImagePath = path.join(__dirname, image_dir, DEFAULT_IMAGE_FILE_NAME);
       fs.readFile(defaultImagePath, (err, defaultData) => {
         if (err) {
           console.error("Error reading default image:", err.message);
@@ -179,10 +170,9 @@ http
           res.end();
           console.log("Default image served");
         }
-        //console.log("Default image served for:", imagePath);
       }
       );
-    }
+    
   }})
   .listen(HTTP_PORT, () => {
     console.log(`Client-facing HTTP server running on port ${HTTP_PORT}`);
