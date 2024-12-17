@@ -11,24 +11,11 @@ const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const args = process.argv.slice(2);
-const PORT = parseInt(args[0], 10) || 3000;
-const SURROGATE_ID = parseInt(args[1], 10) || 1;  // 1 : Europe surrogate, 2 : France surrogate, 3 : Italy surrogate
-const MAX_CACHE_SIZE = parseInt(args[2], 10) || 5;
-const BROTHER_HOSTNAME = args[3] || "localhost";
-const BROTHER_PORT = parseInt(args[4], 10) || 8000;
-
-var image_dir ;
-switch (SURROGATE_ID) {
-  case 1:
-     image_dir = "EU_images";
-    break;
-  case 2:
-     image_dir = "FR_images";
-    break;
-  case 3:
-     image_dir = "IT_images";
-    break;
-}
+const PORT = 3000;
+const MAX_CACHE_SIZE = 5;
+const SERVER_HOSTNAME = args[0] || "localhost";
+const SERVER_PORT = 8000;
+const IMAGE_DIR = "EU_images";
 
 const cache = new Map();
 
@@ -50,8 +37,8 @@ function getLeastFrequentlyUsedKey() {
 function getDataFromMainServer(endpoint) {
   return new Promise((resolve, reject) => {
     const options = {
-      hostname: BROTHER_HOSTNAME,
-      port: BROTHER_PORT,
+      hostname: SERVER_HOSTNAME,
+      port: SERVER_PORT,
       path: endpoint,
       method: "GET",
     };
@@ -68,7 +55,7 @@ function getDataFromMainServer(endpoint) {
           const buffer = Buffer.concat(data);
           const localPath = path.join(
             __dirname,
-            image_dir,
+            IMAGE_DIR,
             path.basename(endpoint)
           );
 
@@ -121,7 +108,7 @@ app.use(async (req, res) => {
       const lfuKey = getLeastFrequentlyUsedKey();
       cache.delete(lfuKey);
 
-      const filePath = path.join(__dirname, image_dir, path.basename(lfuKey));
+      const filePath = path.join(__dirname, IMAGE_DIR, path.basename(lfuKey));
       fs.unlink(filePath, (err) => {
         if (err) {
           console.error(`Error deleting file ${filePath}:`, err.message);
@@ -140,21 +127,15 @@ app.use(async (req, res) => {
     console.log("Image served and cached:", imagePath);
   } catch (err) {
 
-    if (SURROGATE_ID == 1) {
-      console.error("Error fetching image from main server:", err.message);
-      res.status(404).send("Image not found");
-    } else {
-      console.error("Error fetching image from main server:", err.message);
-
-      const imgPath = path.join(__dirname, image_dir, "crying_minnie.png");
-      res.sendFile(imgPath);
-      console.log("Default image served for:", imagePath);
-    }
+    
+    console.error("Error fetching image from main server:", err.message);
+    res.status(404).send("Image not found");
+    
   }
 });
 
 app.listen(PORT, () => {
-  if (args.length > 5) {
+  if (args.length > 1) {
     console.error("Too many arguments provided.");
     process.exit();
   }
